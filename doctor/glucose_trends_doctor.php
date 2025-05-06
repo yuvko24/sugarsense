@@ -136,47 +136,50 @@ $conn->close();
 </header>
 
 <main class="container py-4 flex-grow-1">
-<div class="row justify-content-between align-items-center mb-4">
-  <div class="col-auto">
-    <a href="dashboard_doctor.php?patient_id=<?= $patientId ?>" class="btn btn-outline-secondary btn-sm">🔙 חזרה</a>
+  <div class="row justify-content-between align-items-center mb-4">
+    <div class="col-auto">
+      <a href="dashboard_doctor.php?patient_id=<?= $patientId ?>" class="btn btn-outline-secondary btn-sm">🔙 חזרה</a>
+    </div>
+    <div class="col text-center">
+      <h2 class="mb-0">📈 גרף מגמות סוכר</h2>
+    </div>
+    <div class="col-auto"></div>
   </div>
-  <div class="col text-center">
-    <h2 class="mb-0">📈 גרף מגמות סוכר</h2>
-  </div>
-  <div class="col-auto"></div>
-</div>
 
-<div class="alert alert-info mt-4 text-center" dir="rtl">
-  <h5 class="fw-bold">📚 הסבר על קבוצות:</h5>
-  <strong>🌅 בוקר:</strong> צום, שעתיים אחרי ארוחת בוקר<br>
-  <strong>🌞 צהריים:</strong> לפני ארוחת צהריים, שעתיים אחרי ארוחת צהריים<br>
-  <strong>🌙 ערב:</strong> לפני ארוחת ערב, שעתיים אחרי ארוחת ערב, לפני שינה
-</div>
+  <div class="alert alert-info mt-4 text-center" dir="rtl">
+    <h5 class="fw-bold">📚 הסבר על קבוצות:</h5>
+    <strong>🌅 בוקר:</strong> צום, שעתיים אחרי ארוחת בוקר<br>
+    <strong>🌞 צהריים:</strong> לפני ארוחת צהריים, שעתיים אחרי ארוחת צהריים<br>
+    <strong>🌙 ערב:</strong> לפני ארוחת ערב, שעתיים אחרי ארוחת ערב, לפני שינה
+  </div>
 
-<form method="get" class="row g-3 align-items-end text-end mb-4">
-  <div class="col-md-3">
-    <label for="from_date" class="form-label">תאריך התחלה</label>
-    <input type="date" id="from_date" name="from_date" value="<?= htmlspecialchars($fromDate) ?>" class="form-control">
-  </div>
-  <div class="col-md-3">
-    <label for="to_date" class="form-label">תאריך סיום</label>
-    <input type="date" id="to_date" name="to_date" value="<?= htmlspecialchars($toDate ?? '') ?>" class="form-control">
-  </div>
-  <div class="col-md-3">
-    <label for="time_group" class="form-label">קבוצת מדידה</label>
-    <select id="time_group" name="time_group" class="form-select">
-      <option value="">הצג הכל</option>
-      <option value="morning" <?= $timeGroup === 'morning' ? 'selected' : '' ?>>🌅 בוקר</option>
-      <option value="noon" <?= $timeGroup === 'noon' ? 'selected' : '' ?>>🌞 צהריים</option>
-      <option value="evening" <?= $timeGroup === 'evening' ? 'selected' : '' ?>>🌙 ערב</option>
-    </select>
-  </div>
-  <div class="col-md-2">
-    <button type="submit" class="btn btn-primary w-100">🔍 סינון</button>
-  </div>
-</form>
+  <form method="get" class="row g-3 align-items-end text-end mb-4">
+    <div class="col-md-3">
+      <label for="from_date" class="form-label text-end d-block">תאריך התחלה</label>
+      <input type="date" id="from_date" name="from_date" value="<?= htmlspecialchars($fromDate) ?>" class="form-control">
+    </div>
+    <div class="col-md-3">
+      <label for="to_date" class="form-label text-end d-block">תאריך סיום</label>
+      <input type="date" id="to_date" name="to_date" value="<?= htmlspecialchars($toDate ?? '') ?>" class="form-control">
+    </div>
+    <div class="col-md-3">
+      <label for="time_group" class="form-label text-end d-block">קבוצת מדידה</label>
+      <select id="time_group" name="time_group" class="form-select">
+        <option value="">הצג הכל</option>
+        <option value="morning" <?= $timeGroup === 'morning' ? 'selected' : '' ?>>🌅 בוקר</option>
+        <option value="noon" <?= $timeGroup === 'noon' ? 'selected' : '' ?>>🌞 צהריים</option>
+        <option value="evening" <?= $timeGroup === 'evening' ? 'selected' : '' ?>>🌙 ערב</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label invisible d-block">כפתור סינון</label>
+      <button type="submit" class="btn btn-primary w-100">🔍 סינון</button>
+    </div>
+  </form>
 
-<canvas id="glucoseChart" height="100"></canvas>
+  <div style="overflow-x: auto;">
+    <canvas id="glucoseChart" height="300" style="min-width: 600px;"></canvas>
+  </div>
 </main>
 
 <footer class="text-white text-center py-4 mt-auto" style="background-color: #bcbcbc;">
