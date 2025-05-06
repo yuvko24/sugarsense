@@ -178,18 +178,16 @@ $conn->close();
   <?php else: ?>
     <?php foreach ($mealsByDateTime as $meal): ?>
       <div class="card mb-4 shadow-sm">
-        <div class="card-header text-white fw-bold d-flex justify-content-between align-items-center" style="background-color: #dc8e98;">
-          <div>
-            <?php
-            $date = new DateTime($meal['date']);
-            $formattedDate = $date->format('d/m/Y');
-            ?>
-            📅 <?= $formattedDate; ?> | 🍽️ <?= htmlspecialchars($meal['type']); ?> | 🕒 <?= htmlspecialchars(substr($meal['time'], 0, 5)); ?>
-          </div>
-          <div>
-            <a href="edit_meal.php?id=<?= $meal['id'] ?>" class="btn btn-sm btn-outline-light">✏️ ערכי</a>
-            <a href="delete_meal.php?id=<?= $meal['id'] ?>" class="btn btn-sm btn-outline-light ms-2"
-              onclick="return confirm('האם את בטוחה שברצונך למחוק את הארוחה הזו?')">🗑️ מחקי</a>
+        <div class="card-header text-white fw-bold py-3" style="background-color: #dc8e98;">
+          <div class="row align-items-center">
+            <div class="col-md-9 col-12">
+              📅 <?= $formattedDate; ?> | 🍽️ <?= htmlspecialchars($meal['type']); ?> | 🕒 <?= htmlspecialchars(substr($meal['time'], 0, 5)); ?>
+            </div>
+            <div class="col-md-3 col-12 mt-2 mt-md-0 text-md-end text-center">
+              <a href="edit_meal.php?id=<?= $meal['id'] ?>" class="btn btn-sm btn-outline-light ms-2">✏️ ערכי</a>
+              <a href="delete_meal.php?id=<?= $meal['id'] ?>" class="btn btn-sm btn-outline-light"
+                onclick="return confirm('האם את בטוחה שברצונך למחוק את הארוחה הזו?')">🗑️ מחקי</a>
+            </div>
           </div>
         </div>
         <div class="card-body bg-white">
