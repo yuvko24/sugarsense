@@ -97,6 +97,7 @@ $conn->close();
     </div>
     <div class="d-grid gap-3 col-md-6 mx-auto">
       <a href="glucose_history_doctor.php" class="btn btn-lg text-white" style="background-color: #f4b6bd;">📊 צפייה בהיסטוריית ניטורים</a>
+      <a href="glucose_trends_doctor.php" class="btn btn-lg text-white" style="background-color: #f4b6bd;">📈 צפייה בגרף מגמות סוכר</a>
     </div>
   <?php endif; ?>
 </main>
