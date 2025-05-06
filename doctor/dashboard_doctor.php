@@ -117,17 +117,6 @@ $conn->close();
       </div>
     </div>
 
-    <!-- Sugar Trends -->
-    <div class="col-md-4 mb-3">
-      <div class="card shadow-sm h-100 text-center text-white"
-          style="background-image: url('../Images/graphs.png'); background-size: cover; background-position: center; opacity: 0.5;">
-        <div class="card-body" style="background-color: rgba(0,0,0,0.4);">
-          <h5 class="card-title">📈 גרף מגמות סוכר</h5>
-          <p class="card-text">מעקב ויזואלי אחרי מגמות רמות הסוכר של המטופלת, כולל פילטרים לזיהוי תבניות חריגות.</p>
-          <a href="glucose_trends_doctor.php" class="btn btn-light">למעבר</a>
-        </div>
-      </div>
-    </div>
   </div>
 </main>
 
