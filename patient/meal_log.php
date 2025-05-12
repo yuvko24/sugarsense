@@ -177,6 +177,7 @@ $conn->close();
     <p class="text-center">לא הוזנו עדיין ארוחות בטווח הנבחר.</p>
   <?php else: ?>
     <?php foreach ($mealsByDateTime as $meal): ?>
+      <?php $formattedDate = (new DateTime($meal['date']))->format('d/m/Y'); ?>
       <div class="card mb-4 shadow-sm">
         <div class="card-header text-white fw-bold py-3" style="background-color: #dc8e98;">
           <div class="row align-items-center">
