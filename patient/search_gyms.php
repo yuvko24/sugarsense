@@ -33,37 +33,33 @@ $googleApiKey = 'AIzaSyDjBjuyvLPQcTvrbv1i8cGM7BTArcvXmDw';
 $searchResults = [];
 $errorMessage = '';
 $city = '';
+$activity = '';
 
 // Send a search request to Google Places API for gyms in the specified city
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['city'])) {
     $city = trim($_POST['city']);
+    $activity = trim($_POST['activity'] ?? '');
 
-    logAction($conn, $_SESSION['user_id'], 'search_gym', 'Searched gyms in ' . $city);
+    logAction($conn, $_SESSION['user_id'], 'search_gym', 'Searched gyms in ' . $city . ' with activity: ' . $activity);
     $conn->commit();
-    
-    $query = urlencode("חדר כושר ב" . $city);
+
+    $query = urlencode("חדר כושר ב" . $city . " " . $activity);
     $url = "https://maps.googleapis.com/maps/api/place/textsearch/json?query=$query&key=$googleApiKey&language=iw";
     $response = file_get_contents($url);
     if ($response !== false) {
         $data = json_decode($response, true);
         $status = $data['status'];
         if ($status === 'OK') {
-            // Check if any of the results contains the city name
-            $cityFound = false;
             foreach ($data['results'] as $gym) {
-                if (strpos($gym['formatted_address'], $city) !== false) {
-                    $cityFound = true;
-                    break;
+                if (strpos($gym['formatted_address'], $city) === false) {
+                    continue;
                 }
+                $searchResults[] = $gym;
             }
-        
-            if ($cityFound) {
-                $searchResults = $data['results'];
-            } else {
-                $errorMessage = 'לא נמצאו חדרי כושר באזור שהוזן.';
+            if (empty($searchResults)) {
+                $errorMessage = 'לא נמצאו חדרי כושר שעונים לקריטריונים באזור שהוזן.';
             }
         }
-        
     } else {
         $errorMessage = 'שגיאה בשליחת הבקשה ל-API של Google.';
     }
@@ -87,54 +83,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['city'])) {
 
 <!-- Header -->
 <header>
-    <nav class="navbar navbar-expand-lg navbar-light" style="background-color: #d3d3d3;" dir="rtl">
-      <div class="container-fluid">
-
+  <nav class="navbar navbar-expand-lg navbar-light" style="background-color: #d3d3d3;" dir="rtl">
+    <div class="container-fluid">
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
         aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 
-        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
-          <ul class="navbar-nav me-auto d-flex flex-row-reverse gap-3">
-            <li class="nav-item"><a class="nav-link text-black" href="menu_patient.php?type=gamification">🍬 נקודות מתוקות</a></li>
-            <li class="nav-item"><a class="nav-link text-black" href="menu_patient.php?type=activity">🏃 פעילות גופנית</a></li>
-            <li class="nav-item"><a class="nav-link text-black" href="menu_patient.php?type=glucose">🩸 ניטורי סוכר</a></li>
-            <li class="nav-item"><a class="nav-link text-black" href="menu_patient.php?type=nutrition">🍽️ תזונה יומית</a></li>
-            <li class="nav-item"><a class="nav-link text-black" href="dashboard_patient.php">🏠 דף בית</a></li>
-          </ul>
+      <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+        <ul class="navbar-nav me-auto d-flex flex-row-reverse gap-3">
+          <li class="nav-item"><a class="nav-link text-black" href="menu_patient.php?type=gamification">🍬 נקודות מתוקות</a></li>
+          <li class="nav-item"><a class="nav-link text-black" href="menu_patient.php?type=activity">🏃 פעילות גופנית</a></li>
+          <li class="nav-item"><a class="nav-link text-black" href="menu_patient.php?type=glucose">🩸 ניטורי סוכר</a></li>
+          <li class="nav-item"><a class="nav-link text-black" href="menu_patient.php?type=nutrition">🍽️ תזונה יומית</a></li>
+          <li class="nav-item"><a class="nav-link text-black" href="dashboard_patient.php">🏠 דף בית</a></li>
+        </ul>
 
-          <div class="d-flex align-items-center gap-3">
-            <a class="btn btn-outline-dark" href="../general/logout.php">🚪 התנתקות</a>
-            <a class="navbar-brand me-3" href="dashboard_patient.php">
-              <img src="../Images/logo.jpg" alt="לוגו" width="50" height="50"
-                  class="rounded-circle border border-2 border-secondary shadow-sm">
-            </a>
-          </div>
+        <div class="d-flex align-items-center gap-3">
+          <a class="btn btn-outline-dark" href="../general/logout.php">🚪 התנתקות</a>
+          <a class="navbar-brand me-3" href="dashboard_patient.php">
+            <img src="../Images/logo.jpg" alt="לוגו" width="50" height="50"
+                class="rounded-circle border border-2 border-secondary shadow-sm">
+          </a>
         </div>
       </div>
-    </nav>
- </header>
+    </div>
+  </nav>
+</header>
 
 <main class="container py-5 flex-grow-1">
   <h2 class="text-center mb-4">🔍 חיפוש חדרי כושר לפי אזור</h2>
-  
+
   <p class="text-center mb-4 fs-5 text-muted" style="max-width: 800px; margin: auto;">
-  פעילות גופנית סדירה תורמת רבות לאיזון רמות הסוכר בדם ומשפרת את איכות החיים.  
-  בכל יום שבו ביצעת פעילות גופנית – תוכלי לדווח עליה ולקבל <strong>2 נקודות מתוקות</strong> 💪🍬.  
-  חשוב לנו לדעת האם הפעילות בוצעה באחד מחדרי הכושר שהופיעו בתוצאות החיפוש,  
+  פעילות גופנית סדירה תורמת רבות לאיזון רמות הסוכר בדם ומשפרת את איכות החיים.<br>
+  בכל יום שבו ביצעת פעילות גופנית – תוכלי לדווח עליה ולקבל <strong>2 נקודות מתוקות</strong> 💪🍬.<br>
+  חשוב לנו לדעת האם הפעילות בוצעה באחד מחדרי הכושר שהופיעו בתוצאות החיפוש,
   כדי שנוכל לעקוב ולתגמל אותך בהתאם 🙌
   </p>
 
   <form method="POST" class="text-center mb-5">
-    <div class="input-group mx-auto" style="max-width: 400px;">
-      <input type="text" name="city" class="form-control" placeholder="הכניסי עיר או אזור (לדוגמה: תל אביב)" required>
+    <div class="input-group mx-auto mb-3" style="max-width: 400px;">
+      <input type="text" name="city" class="form-control" placeholder="הכניסי עיר או אזור (לדוגמה: תל אביב)" required value="<?= htmlspecialchars($city) ?>">
       <button type="submit" class="btn btn-primary">חיפוש</button>
+    </div>
+    <div class="input-group mx-auto mb-3" style="max-width: 400px;">
+      <input type="text" name="activity" class="form-control" placeholder="סוג פעילות (למשל: יוגה, פילאטיס)" value="<?= htmlspecialchars($activity) ?>">
     </div>
   </form>
 
   <?php if (!empty($errorMessage)): ?>
-    <div class="alert alert-danger text-center">😔 לצערנו לא נמצאו חדרי כושר באזור שהוזן.</div>
+    <div class="alert alert-danger text-center">😔 <?= htmlspecialchars($errorMessage) ?></div>
   <?php endif; ?>
 
   <?php if (!empty($searchResults)): ?>
