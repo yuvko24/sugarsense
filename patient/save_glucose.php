@@ -79,16 +79,15 @@ for ($i = 0; $i < count($readingDates); $i++) {
 $checkStmt->close();
 $insertStmt->close();
 
-// Log the glucose readings addition
-if ($inserted > 0) {
+if ($inserted > 0 && $skipped == 0) {
     logAction($conn, $patientId, 'add_glucose', 'Added ' . $inserted . ' new glucose readings.');
     $conn->commit();
+    header("Location: menu_patient.php?type=glucose&success=1&count=$inserted");
+    exit;
 }
 
-// Close the connection
-$conn->close();
-
-// Redirect back with success message and duplicate status
+$conn->commit(); 
 header("Location: add_glucose.php?success=1&count=$inserted&skipped=$skipped");
+$conn->close();
 exit;
 ?>
