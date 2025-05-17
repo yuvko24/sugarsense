@@ -28,40 +28,81 @@ if ($conn->connect_error) {
 }
 $conn->autocommit(false);
 
+function calculateDistanceKm($lat1, $lon1, $lat2, $lon2) {
+    $earthRadius = 6371;
+    $dLat = deg2rad($lat2 - $lat1);
+    $dLon = deg2rad($lon2 - $lon1);
+    $a = sin($dLat/2) * sin($dLat/2) +
+         cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+         sin($dLon/2) * sin($dLon/2);
+    $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+    return round($earthRadius * $c, 1);
+}
+
 // Initialize variables for Google API and search results
 $googleApiKey = 'AIzaSyDjBjuyvLPQcTvrbv1i8cGM7BTArcvXmDw';
 $searchResults = [];
 $errorMessage = '';
 $city = '';
 $activity = '';
+$address = '';
+$searchMode = 'city';
+$lat = null;
+$lng = null;
 
 // Send a search request to Google Places API for gyms in the specified city
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['city'])) {
-    $city = trim($_POST['city']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $searchMode = $_POST['search_mode'] ?? 'city';
     $activity = trim($_POST['activity'] ?? '');
 
-    logAction($conn, $_SESSION['user_id'], 'search_gym', 'Searched gyms in ' . $city . ' with activity: ' . $activity);
-    $conn->commit();
+    if ($searchMode === 'city' && !empty($_POST['city'])) {
+        $city = trim($_POST['city']);
+        logAction($conn, $_SESSION['user_id'], 'search_gym', 'Searched gyms in ' . $city . ' with activity: ' . $activity);
+        $conn->commit();
 
-    $query = urlencode("חדר כושר ב" . $city . " " . $activity);
-    $url = "https://maps.googleapis.com/maps/api/place/textsearch/json?query=$query&key=$googleApiKey&language=iw";
-    $response = file_get_contents($url);
-    if ($response !== false) {
-        $data = json_decode($response, true);
-        $status = $data['status'];
-        if ($status === 'OK') {
-            foreach ($data['results'] as $gym) {
-                if (strpos($gym['formatted_address'], $city) === false) {
-                    continue;
-                }
-                $searchResults[] = $gym;
+        $query = urlencode("חדר כושר ב" . $city . " " . $activity);
+        $url = "https://maps.googleapis.com/maps/api/place/textsearch/json?query=$query&key=$googleApiKey&language=iw";
+        $response = file_get_contents($url);
+        if ($response !== false) {
+            $data = json_decode($response, true);
+            if ($data['status'] === 'OK') {
+                $searchResults = $data['results'];
+            } else {
+                $errorMessage = 'לא נמצאו חדרי כושר באזור שהוזן.';
             }
-            if (empty($searchResults)) {
-                $errorMessage = 'לא נמצאו חדרי כושר שעונים לקריטריונים באזור שהוזן.';
+        } else {
+            $errorMessage = 'שגיאה בשליחת הבקשה ל-API של Google.';
+        }
+    }
+
+    if ($searchMode === 'address' && !empty($_POST['address'])) {
+        $address = trim($_POST['address']);
+        logAction($conn, $_SESSION['user_id'], 'search_gym', 'Searched gyms near address: ' . $address . ' with activity: ' . $activity);
+        $conn->commit();
+
+        $geoUrl = "https://maps.googleapis.com/maps/api/geocode/json?address=" . urlencode($address) . "&key=$googleApiKey";
+        $geoResponse = file_get_contents($geoUrl);
+        if ($geoResponse !== false) {
+            $geoData = json_decode($geoResponse, true);
+            if ($geoData['status'] === 'OK') {
+                $location = $geoData['results'][0]['geometry']['location'];
+                $lat = $location['lat'];
+                $lng = $location['lng'];
+
+                $nearbyUrl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=$lat,$lng&radius=2000&type=gym&keyword=" . urlencode($activity) . "&key=$googleApiKey&language=iw";
+                $nearbyResponse = file_get_contents($nearbyUrl);
+                if ($nearbyResponse !== false) {
+                    $nearbyData = json_decode($nearbyResponse, true);
+                    if ($nearbyData['status'] === 'OK') {
+                        $searchResults = $nearbyData['results'];
+                    } else {
+                        $errorMessage = 'לא נמצאו חדרי כושר סמוכים לכתובת שהוזנה.';
+                    }
+                }
+            } else {
+                $errorMessage = 'הכתובת לא זוהתה. אנא בדקי ונסי שוב.';
             }
         }
-    } else {
-        $errorMessage = 'שגיאה בשליחת הבקשה ל-API של Google.';
     }
 }
 ?>
@@ -114,21 +155,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['city'])) {
 <main class="container py-5 flex-grow-1">
   <h2 class="text-center mb-4">🔍 חיפוש חדרי כושר לפי אזור</h2>
 
-  <p class="text-center mb-4 fs-5 text-muted" style="max-width: 800px; margin: auto;">
-  פעילות גופנית סדירה תורמת רבות לאיזון רמות הסוכר בדם ומשפרת את איכות החיים.<br>
-  בכל יום שבו ביצעת פעילות גופנית – תוכלי לדווח עליה ולקבל <strong>2 נקודות מתוקות</strong> 💪🍬.<br>
-  חשוב לנו לדעת האם הפעילות בוצעה באחד מחדרי הכושר שהופיעו בתוצאות החיפוש,
-  כדי שנוכל לעקוב ולתגמל אותך בהתאם 🙌
-  </p>
-
   <form method="POST" class="text-center mb-5">
-    <div class="input-group mx-auto mb-3" style="max-width: 400px;">
-      <input type="text" name="city" class="form-control" placeholder="הכניסי עיר או אזור (לדוגמה: תל אביב)" required value="<?= htmlspecialchars($city) ?>">
-      <button type="submit" class="btn btn-primary">חיפוש</button>
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="radio" name="search_mode" id="modeCity" value="city" <?= $searchMode === 'city' ? 'checked' : '' ?>>
+      <label class="form-check-label" for="modeCity">חיפוש לפי עיר</label>
     </div>
-    <div class="input-group mx-auto mb-3" style="max-width: 400px;">
-      <input type="text" name="activity" class="form-control" placeholder="סוג פעילות (למשל: יוגה, פילאטיס)" value="<?= htmlspecialchars($activity) ?>">
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="radio" name="search_mode" id="modeAddress" value="address" <?= $searchMode === 'address' ? 'checked' : '' ?>>
+      <label class="form-check-label" for="modeAddress">חיפוש חדר כושר בקרבת כתובת</label>
     </div>
+
+    <div class="input-group mx-auto mt-3 mb-2" style="max-width: 400px;">
+      <input type="text" name="city" class="form-control" placeholder="הכניסי עיר (למשל: תל אביב)" value="<?= htmlspecialchars($city) ?>">
+    </div>
+
+    <div class="input-group mx-auto mb-2" style="max-width: 400px;">
+      <input type="text" name="address" class="form-control" placeholder="הכניסי כתובת מדויקת (למשל: הלוחמים 4 הוד השרון)" value="<?= htmlspecialchars($address) ?>">
+    </div>
+
+    <div class="input-group mx-auto mb-3" style="max-width: 400px;">
+      <input type="text" name="activity" class="form-control" placeholder="סוג פעילות (יוגה, פילאטיס וכו׳)" value="<?= htmlspecialchars($activity) ?>">
+    </div>
+
+    <button type="submit" class="btn btn-primary">חיפוש</button>
   </form>
 
   <?php if (!empty($errorMessage)): ?>
@@ -136,14 +185,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['city'])) {
   <?php endif; ?>
 
   <?php if (!empty($searchResults)): ?>
-    <h4 class="text-center mb-4 text-success">🏋️‍♀️ אלו חדרי הכושר שמצאנו עבורך באזור <?= htmlspecialchars($city) ?></h4>
+    <h4 class="text-center mb-4 text-success">🏋️‍♀️ אלו חדרי הכושר שמצאנו עבורך:</h4>
     <div class="row row-cols-1 row-cols-md-2 g-4">
       <?php foreach ($searchResults as $gym): ?>
+      <?php
+        $gymLat = $gym['geometry']['location']['lat'] ?? null;
+        $gymLng = $gym['geometry']['location']['lng'] ?? null;
+        $distanceKm = ($searchMode === 'address' && $lat && $lng && $gymLat && $gymLng)
+            ? calculateDistanceKm($lat, $lng, $gymLat, $gymLng)
+            : null;
+      ?>
         <div class="col">
           <div class="card h-100 shadow-sm">
             <div class="card-body">
               <h5 class="card-title">🏋️ <?= htmlspecialchars($gym['name']) ?></h5>
-              <p class="card-text">📍 <?= htmlspecialchars($gym['formatted_address']) ?></p>
+              <p class="card-text">📍 <?= htmlspecialchars($gym['vicinity'] ?? $gym['formatted_address']) ?></p>
+              <?php if ($distanceKm !== null): ?>
+                <p class="card-text">📏 מרחק מהכתובת: כ־<?= $distanceKm ?> ק"מ</p>
+              <?php endif; ?>
               <?php if (isset($gym['rating'])): ?>
                 <p class="card-text">⭐ דירוג: <?= $gym['rating'] ?>/5</p>
               <?php endif; ?>
@@ -174,6 +233,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['city'])) {
     }
   });
 </script>
+
+<script>
+  function toggleFields() {
+    const mode = document.querySelector('input[name="search_mode"]:checked').value;
+    const cityInput = document.querySelector('input[name="city"]');
+    const addressInput = document.querySelector('input[name="address"]');
+
+    if (mode === 'city') {
+      cityInput.disabled = false;
+      addressInput.disabled = true;
+    } else {
+      cityInput.disabled = true;
+      addressInput.disabled = false;
+    }
+  }
+
+  document.querySelectorAll('input[name="search_mode"]').forEach(radio => {
+    radio.addEventListener('change', toggleFields);
+  });
+
+  window.addEventListener('DOMContentLoaded', toggleFields);
+</script>
+
 
 </body>
 </html>
