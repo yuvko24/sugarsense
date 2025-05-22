@@ -138,7 +138,7 @@ $conn->close();
 <main class="container py-4 flex-grow-1">
   <div class="row justify-content-between align-items-center mb-4">
     <div class="col-auto">
-      <a href="dashboard_doctor.php?patient_id=<?= $patientId ?>" class="btn btn-outline-secondary btn-sm">🔙 חזרה</a>
+      <a href="menu_doctor.php?type=glucose" class="btn btn-outline-secondary btn-sm">🔙 חזרה</a>
     </div>
     <div class="col text-center">
       <h2 class="mb-0">📈 גרף מגמות סוכר</h2>
