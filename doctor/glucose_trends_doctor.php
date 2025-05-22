@@ -171,9 +171,12 @@ $conn->close();
         <option value="evening" <?= $timeGroup === 'evening' ? 'selected' : '' ?>>🌙 ערב</option>
       </select>
     </div>
-    <div class="col-md-3">
-      <label class="form-label invisible d-block">כפתור סינון</label>
-      <button type="submit" class="btn btn-primary w-100">🔍 סינון</button>
+    <div class="col-md-3 text-end">
+      <label class="form-label invisible d-block">פעולות</label>
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary">🔍 סינון</button>
+        <a href="glucose_trends_doctor.php" class="btn btn-outline-secondary">🔄 איפוס סינון</a>
+      </div>
     </div>
   </form>
 
@@ -245,7 +248,7 @@ new Chart(ctx, {
           callback: function(value, index, ticks) {
             const rawDate = this.getLabelForValue(value);
             const date = new Date(rawDate);
-            if (isNaN(date)) return rawDate; // fallback במקרה של פורמט לא תקני
+            if (isNaN(date)) return rawDate; 
             const day = String(date.getDate()).padStart(2, '0');
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const year = date.getFullYear();
