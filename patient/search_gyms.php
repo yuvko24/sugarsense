@@ -40,7 +40,7 @@ function calculateDistanceKm($lat1, $lon1, $lat2, $lon2) {
 }
 
 // Initialize variables for Google API and search results
-$googleApiKey = 'AIzaSyDjBjuyvLPQcTvrbv1i8cGM7BTArcvXmDw';
+$googleApiKey = 'xxx';
 $searchResults = [];
 $errorMessage = '';
 $city = '';
